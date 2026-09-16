@@ -1,11 +1,17 @@
 package com.example.infrastructure.adapter.out.persistence;
 
-import org.springframework.stereotype.Component;
-
+import org.mapstruct.Mapper;
 import com.example.domain.model.Task;
 
-@Component 
-public class TaskPersistenceMapper {
+@Mapper(componentModel = "spring") 
+public interface TaskPersistenceMapper {
+    
+    Task toDomain(TaskJpaEntity taskJpaEntity);
+    
+    TaskJpaEntity toJpaEntity(Task task);
+
+/*    
+//Está manual, hay que implementar el mapstruct para que haga el mapeo de forma automática. 
 
     public Task toDomain(TaskJpaEntity entity) {
     // método toDomain, que recive una entidad, que pasa al dominio, donde se raliza la tarea.
@@ -36,7 +42,7 @@ public class TaskPersistenceMapper {
             .createdAt(task.getCreatedAt())
             .completedAt(task.getCompletedAt())
             .build();
-    }
+    }*/ 
 
 
 }

@@ -2,13 +2,19 @@ package com.example.infrastructure.adapter.in.rest.dto;
 
 import java.time.LocalDateTime;
 
-import com.example.domain.model.Task;
 import com.example.domain.model.TaskStatus;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+public record TaskResponse(
 
+        long id,
+        String title,
+        String description,
+        TaskStatus status,
+        LocalDateTime createdAt,
+        LocalDateTime completedAt,
+        String imagePath) {}
+
+/* 
 @Getter 
 @Setter 
 @Builder 
@@ -34,3 +40,4 @@ public class TaskResponse {
     }
 
 }
+*/

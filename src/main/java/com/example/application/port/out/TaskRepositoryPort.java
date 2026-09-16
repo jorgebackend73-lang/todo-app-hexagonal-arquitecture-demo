@@ -13,4 +13,6 @@ public interface TaskRepositoryPort {
     Optional<Task> findById(long id);
 
     List<Task> findAll();
+
+    void deleteById(long id);
 }

@@ -1,56 +1,108 @@
-/*Esta clase es la que implementa el caso de uso */
 package com.example.application.service;
 
 import java.util.List;
 
-import org.springframework.stereotype.Service;
 
 import com.example.application.port.in.CreateTaskUseCase;
+import com.example.application.port.in.DeleteTaskUseCase;
 import com.example.application.port.in.GetTaskUseCase;
 import com.example.application.port.in.ListTaskUseCase;
+import com.example.application.port.in.UpdateTaskUseCase;
+import com.example.application.port.in.UploadTaskImageUseCase;
+import com.example.application.port.out.FileStoragePort;
 import com.example.application.port.out.TaskRepositoryPort;
 import com.example.domain.exception.TaskNoFoundException;
 import com.example.domain.model.Task;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * ¿Es correcto una anotación Spring aquí? (@Service)
+ * NO si responden los más puristas.
+ * Porque introducimos una dependencia del framework.
+ * Si mañana migramos a Quarkus va a ser costoso.
+ * TO_DO: ¿Qué debería hacerse para evitar el acoplamiento?
+ * Crear un configuration en la capa de infraestructura donde
+ * tengamos todos los Bean que se crean cuando se levanta el
+ * contexto de spring:
+ * 1. Quitar @Service (y su import) de TaskService — dos líneas menos.
+   2. Crear una clase nueva @Configuration en infraestructura, con un método @Bean 
+      que construya el TaskService pasándole los puertos por constructor.
+   3. Nada más. El controller sigue inyectando las interfaces de caso de uso igual que ahora.
+ */
+
+
+// Quitamos la anotación de springboot: @Service
 @RequiredArgsConstructor
-@Service 
-/* ¿Es correcta una anotación de Spring aquí?
-Siendo puristas, no. Pero implementarlo correctamente tiene un elevado coste.
-
-Con esta anotación estamos introduciendo una dependencia del framework en la capa de
-aplicación. Si queremos o tenemos que migrar a otro framework como quarkus o si queremos
-testear en aislamiento total, siempre estaría acoplada a Spring Framework.
-
-Para resolverlo habría que crear un componente ( anotado con @Component o @Configuration)
-en la capa de infraestructura donde tengamos todos los bean que sean necesarios cuando
-se levant el contexto Spring y así evitar esta anotación.*/ 
-public class TaskService implements CreateTaskUseCase, GetTaskUseCase, ListTaskUseCase {
+public class TaskService implements CreateTaskUseCase, GetTaskUseCase, ListTaskUseCase, DeleteTaskUseCase,
+        UpdateTaskUseCase, UploadTaskImageUseCase {
 
     private final TaskRepositoryPort taskRepositoryPort;
+    private final FileStoragePort fileStoragePort;
 
     @Override
     public Task create(Task task) {
-        // TODO Auto-generated method stub
-        //throw new UnsupportedOperationException("Unimplemented method 'create'");
+        // task.initDefaults(); // comentar para la versión record de Task
         return taskRepositoryPort.save(task);
     }
 
     @Override
     public Task getById(long id) {
-        // TODO Auto-generated method stub
-        //throw new UnsupportedOperationException("Unimplemented method 'getById'");
-        return taskRepositoryPort.findById(id)
-            .orElseThrow(() -> new TaskNoFoundException(id));
+
+        return taskRepositoryPort.findById(id).orElseThrow(() -> new TaskNoFoundException(id));
     }
 
     @Override
-    public List<Task> listAll() {
-        // TODO Auto-generated method stub
-        //throw new UnsupportedOperationException("Unimplemented method 'listAll'");
+    public List<Task> findAll() {
+
         return taskRepositoryPort.findAll();
     }
 
+    @Override
+    public void deleteById(long id) {
+
+        Task task = taskRepositoryPort.findById(id).orElseThrow(() -> new TaskNoFoundException(id));
+
+        taskRepositoryPort.deleteById(id);
+
+        // fileStoragePort.delete(task.getImagePath()); // comentar para record.
+         fileStoragePort.delete(task.imagePath());
+
+    }
+
+    @Override
+    public Task update(long id, Task task) {
+
+        Task foundedTask = taskRepositoryPort.findById(id).orElseThrow(() -> new TaskNoFoundException(id));
+
+        // foundedTask.update(task.getTitle(), task.getDescription()); // comentar para record.
+         Task updatedTask = foundedTask.update(task.title(), task.description()).changeStatusTo(task.status());
+        
+        // foundedTask.changeStatusTo(task.getStatus()); // comentar para record.
+
+        // return taskRepositoryPort.save(foundedTask); // comentar para record.
+         return taskRepositoryPort.save(updatedTask);
+
+    }
+
+    @Override
+    public Task uploadImage(long id, String fileName, byte[] content) {
+
+        Task task = taskRepositoryPort.findById(id).orElseThrow(() -> new TaskNoFoundException(id));
+
+        // String previousImage = task.getImagePath(); // comentar para record.
+         String previousImage = task.imagePath();
+
+        String imagePath = fileStoragePort.store(fileName, content);
+
+        task.attachImage(imagePath);
+
+        // Task saved = taskRepositoryPort.save(task); // comentar para record.
+         Task saved = taskRepositoryPort.save(task.attachImage(imagePath));
+
+        fileStoragePort.delete(previousImage);
+
+        return saved;
+    }
 
 }

@@ -2,8 +2,6 @@ package com.example.infrastructure.adapter.out.persistence;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-
 import org.springframework.stereotype.Repository;
 
 import com.example.application.port.out.TaskRepositoryPort;
@@ -18,18 +16,18 @@ public class JpaTaskRepositoryAdapter implements TaskRepositoryPort {
 
     private final SpringDataTaskRepository springDataTaskRepository;
 
-    private final TaskPersistenceMapper mapper;
+    private final TaskPersistenceMapper taskPersistenceMapper;
 
     //con esto se termina la implementación del metodo save.
 
     @Override
     public Task save(Task task) {
                 
-        task.initDefaults();
-        TaskJpaEntity entity = mapper.toJpaEntity(task);
-        TaskJpaEntity saved = springDataTaskRepository.save(entity);
+        //task.initDefaults();
+        TaskJpaEntity taskJpaEntity = taskPersistenceMapper.toJpaEntity(task);
+        TaskJpaEntity saved = springDataTaskRepository.save(taskJpaEntity);
         
-        return mapper.toDomain(saved);
+        return taskPersistenceMapper.toDomain(saved);
     }
 
     @Override
@@ -39,7 +37,7 @@ public class JpaTaskRepositoryAdapter implements TaskRepositoryPort {
         
         //pasamos con mapper por referencia el metodo toDomain de entidad a dominio
         //que es lo que este metodo está esperando.
-        return springDataTaskRepository.findById(id).map(mapper::toDomain);
+        return springDataTaskRepository.findById(id).map(taskPersistenceMapper::toDomain);
 
     }
 
@@ -49,8 +47,13 @@ public class JpaTaskRepositoryAdapter implements TaskRepositoryPort {
         //throw new UnsupportedOperationException("Unimplemented method 'findAll'");
         return springDataTaskRepository.findAll()
             .stream()
-            .map(mapper::toDomain)
-            .collect(Collectors.toList());
+            .map(taskPersistenceMapper::toDomain).toList();
+    }
+
+    @Override
+    public void deleteById(long id) {
+        
+        springDataTaskRepository.deleteById(id);
     }
 
 }
