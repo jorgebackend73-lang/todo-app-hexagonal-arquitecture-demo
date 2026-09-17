@@ -24,6 +24,7 @@ import com.example.infrastructure.adapter.in.rest.dto.CreateTaskRequest;
 import com.example.infrastructure.adapter.in.rest.dto.TaskResponse;
 import com.example.infrastructure.adapter.in.rest.dto.UpdateTaskRequest;
 
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -81,6 +82,7 @@ public class TaskController {
     }
 
     @DeleteMapping("/{id}")
+    @Transactional 
     public ResponseEntity<Void> delete(@PathVariable long id) {
 
         deleteTaskUseCase.deleteById(id);
